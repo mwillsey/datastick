@@ -1,6 +1,6 @@
-use util::IndexMap;
+use super::*;
 
-use crate::*;
+use crate::util::IndexMap;
 
 #[derive(Default, Debug, Clone)]
 struct Trie(IndexMap<Value, Self>);
@@ -65,7 +65,7 @@ impl CompiledQuery {
         F: FnMut(&[Value]),
     {
         let tries = self
-        .query
+            .query
             .atoms
             .iter()
             .map(|atom| {
