@@ -1,49 +1,9 @@
 mod gj;
 
+use crate::ast::*;
 use crate::util::*;
+
 pub use gj::CompiledQuery;
-
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
-pub struct Value(u64);
-
-#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
-pub struct Symbol(u64);
-
-impl std::fmt::Display for Symbol {
-    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
-    }
-}
-
-type Variable = Symbol;
-
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
-pub enum Term {
-    Variable(Variable),
-    Value(Value),
-}
-
-#[derive(Debug, Clone)]
-struct Atom {
-    relation: Symbol,
-    terms: Vec<Term>,
-}
-
-impl Atom {
-    fn vars(&self) -> impl Iterator<Item = Variable> + '_ {
-        self.terms.iter().filter_map(|t| match t {
-            Term::Variable(v) => Some(*v),
-            _ => None,
-        })
-    }
-
-    fn has_var(&self, v: Variable) -> bool {
-        self.terms.contains(&Term::Variable(v))
-    }
-}
-
-// #[derive(Clone)]
-// pub enum Type {}
 
 #[derive(Clone)]
 pub struct Relation {
