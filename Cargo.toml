@@ -1,0 +1,7 @@
+[package]
+name = "datastick"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+indexmap = "1.7"
