@@ -3,6 +3,8 @@ mod gj;
 #[cfg(test)]
 mod tests;
 
+use std::borrow::BorrowMut;
+
 use crate::ast::*;
 use crate::util::*;
 
@@ -10,8 +12,9 @@ pub use gj::CompiledQuery;
 
 #[derive(Clone)]
 pub struct Relation {
-    set: IndexSet<Vec<Value>>,
-    arity: usize,
+    // TODO shouldn't be pub
+    pub set: IndexSet<Vec<Value>>,
+    pub arity: usize,
     // schema: Vec<Type>,
 }
 
@@ -23,9 +26,25 @@ impl Relation {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.set.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        let n = self.set.len();
+        n.checked_div(self.arity).unwrap_or(n)
+    }
+
     pub fn insert(&mut self, tuple: &[Value]) {
         assert_eq!(tuple.len(), self.arity);
         self.set.insert(tuple.to_vec());
+    }
+
+    pub fn insert_many(&mut self, tuples: &[Value]) {
+        assert_eq!(tuples.len() % self.arity, 0);
+        for tuple in tuples.chunks_exact(self.arity) {
+            self.set.insert(tuple.to_vec());
+        }
     }
 
     pub fn insert_arrays<V, const N: usize>(&mut self, tuples: &[[V; N]])
@@ -60,24 +79,6 @@ impl Database {
                 arity,
             })
     }
-
-    pub fn get_relation(&self, symbol: Symbol) -> &Relation {
-        self.relations
-            .get(&symbol)
-            .unwrap_or_else(|| panic!("Relation {} does not exist", symbol))
-    }
-
-    pub fn get_mut_relation(&mut self, symbol: Symbol) -> &mut Relation {
-        self.relations
-            .get_mut(&symbol)
-            .unwrap_or_else(|| panic!("Relation {} does not exist", symbol))
-    }
-
-    pub fn remove_relation(&mut self, symbol: Symbol) -> Relation {
-        self.relations
-            .remove(&symbol)
-            .unwrap_or_else(|| panic!("Relation {} does not exist", symbol))
-    }
 }
 
 impl Database {
@@ -98,23 +99,28 @@ impl Database {
         query.eval(self, f)
     }
 
-    pub fn get_index(&self, handle: QueryHandle, var: Symbol) -> usize {
-        self.queries[&handle].get_index(var)
-    }
-
     pub fn get_indexes(&self, handle: QueryHandle, vars: &[Symbol]) -> Vec<usize> {
         let q = &self.queries[&handle];
         vars.iter().map(|&v| q.get_index(v)).collect()
     }
 
-    pub fn collect(&self, handle: QueryHandle) -> Vec<Value> {
-        let mut vec = vec![];
-        self.collect_into(handle, &mut vec);
-        vec
+    // TODO this is an awful api
+    pub fn get_subst_len(&self, handle: QueryHandle) -> usize {
+        let q = &self.queries[&handle];
+        q.by_var.len()
     }
 
-    pub fn collect_into(&self, handle: QueryHandle, vec: &mut Vec<Value>) {
+    pub fn collect(&self, handle: QueryHandle) -> Vec<Value> {
+        self.collect_into(handle, vec![])
+    }
+
+    pub fn collect_into<V>(&self, handle: QueryHandle, mut vec: V) -> V
+    where
+        V: BorrowMut<Vec<Value>>,
+    {
+        let v = vec.borrow_mut();
         let query = &self.queries[&handle];
-        query.eval(self, |values| vec.extend_from_slice(values));
+        query.eval(self, |values| v.extend_from_slice(values));
+        vec
     }
 }

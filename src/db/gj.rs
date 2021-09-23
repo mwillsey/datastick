@@ -27,7 +27,7 @@ type VarOccurences = IndexMap<Variable, Vec<usize>>;
 #[derive(Clone)]
 pub struct CompiledQuery {
     query: Query,
-    by_var: VarOccurences,
+    pub by_var: VarOccurences,
 }
 
 impl CompiledQuery {

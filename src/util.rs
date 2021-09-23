@@ -16,6 +16,14 @@ pub(crate) type HashSet<K> = std::collections::HashSet<K>;
 
 static SYMBOLS: Lazy<Mutex<IndexSet<&'static str>>> = Lazy::new(Default::default);
 
+#[macro_export]
+macro_rules! symbols {
+    ($($id:ident),+) => {
+        #[allow(non_snake_case, unused_variables)]
+        let ($($id),+) = ($(Symbol::new(stringify!($id))),+);
+    };
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Symbol(NonZeroU32);
 
@@ -31,14 +39,6 @@ impl Symbol {
         let idx = NonZeroU32::new(idx as u32 + 1).unwrap();
         Symbol(idx)
     }
-}
-
-/// Shorthand for [Symbol::new]
-pub fn sym<T>(s: T) -> Symbol
-where
-    T: Borrow<str> + Into<Box<str>>,
-{
-    Symbol::new(s)
 }
 
 impl AsRef<str> for Symbol {

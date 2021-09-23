@@ -2,7 +2,7 @@ use std::any::{Any, TypeId};
 
 use crate::util::{HashSet, Symbol};
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(Default, Debug, PartialEq, Eq, Hash, Clone, Copy, PartialOrd, Ord)]
 pub struct Value(u64);
 
 pub type Variable = Symbol;

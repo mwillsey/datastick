@@ -24,13 +24,6 @@ macro_rules! value {
     };
 }
 
-macro_rules! symbols {
-    ($($id:ident),+) => {
-        #[allow(non_snake_case, unused_variables)]
-        let ($($id),+) = ($(Symbol::new(stringify!($id))),+);
-    };
-}
-
 impl Database {
     fn eval_and_check<V, const N: usize>(
         &self,
@@ -58,7 +51,7 @@ impl Database {
 
 #[test]
 fn triangle() {
-    symbols!(R, a, b, c);
+    crate::symbols!(R, a, b, c);
     let mut db = Database::default();
     let n = 10;
 
