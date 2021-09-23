@@ -1,5 +1,8 @@
 mod gj;
 
+#[cfg(test)]
+mod tests;
+
 use crate::ast::*;
 use crate::util::*;
 
@@ -13,26 +16,39 @@ pub struct Relation {
 }
 
 impl Relation {
+    pub fn new(arity: usize) -> Relation {
+        Self {
+            set: Default::default(),
+            arity,
+        }
+    }
+
     pub fn insert(&mut self, tuple: &[Value]) {
         assert_eq!(tuple.len(), self.arity);
         self.set.insert(tuple.to_vec());
+    }
+
+    pub fn insert_arrays<V, const N: usize>(&mut self, tuples: &[[V; N]])
+    where
+        V: Clone + Type,
+    {
+        assert_eq!(self.arity, N);
+        for tuple in tuples {
+            let tuple = tuple.clone().map(|v| v.to_value());
+            self.insert(&tuple);
+        }
     }
 }
 
 #[derive(Default)]
 pub struct Database {
-    relations: IndexMap<Symbol, Relation>,
+    pub relations: IndexMap<Symbol, Relation>,
     queries: IndexMap<QueryHandle, CompiledQuery>,
     query_id: usize,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone, Copy)]
 pub struct QueryHandle(usize);
-
-#[derive(Debug, Clone)]
-pub struct Query {
-    atoms: Vec<Atom>,
-}
 
 impl Database {
     pub fn add_relation(&mut self, symbol: Symbol, arity: usize) -> &mut Relation {
@@ -69,7 +85,8 @@ impl Database {
         let cq = CompiledQuery::new(self, query);
         let handle = QueryHandle(self.query_id);
         self.query_id += 1;
-        self.queries.insert(handle, cq).unwrap();
+        let old = self.queries.insert(handle, cq);
+        assert!(old.is_none());
         handle
     }
 
@@ -80,12 +97,24 @@ impl Database {
         let query = &self.queries[&handle];
         query.eval(self, f)
     }
-}
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    pub fn get_index(&self, handle: QueryHandle, var: Symbol) -> usize {
+        self.queries[&handle].get_index(var)
+    }
+
+    pub fn get_indexes(&self, handle: QueryHandle, vars: &[Symbol]) -> Vec<usize> {
+        let q = &self.queries[&handle];
+        vars.iter().map(|&v| q.get_index(v)).collect()
+    }
+
+    pub fn collect(&self, handle: QueryHandle) -> Vec<Value> {
+        let mut vec = vec![];
+        self.collect_into(handle, &mut vec);
+        vec
+    }
+
+    pub fn collect_into(&self, handle: QueryHandle, vec: &mut Vec<Value>) {
+        let query = &self.queries[&handle];
+        query.eval(self, |values| vec.extend_from_slice(values));
     }
 }

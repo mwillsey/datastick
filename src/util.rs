@@ -8,10 +8,13 @@ use std::{
 
 use once_cell::sync::Lazy;
 
-pub type IndexMap<K, V> = indexmap::IndexMap<K, V>;
-pub type IndexSet<K> = indexmap::IndexSet<K>;
+pub(crate) type IndexMap<K, V> = indexmap::IndexMap<K, V>;
+pub(crate) type IndexSet<K> = indexmap::IndexSet<K>;
 
-static SYMBOLS: Lazy<Mutex<IndexSet<&'static str>>> = Lazy::new(|| Default::default());
+// pub(crate) type HashMap<K, V> = std::collections::HashMap<K, V>;
+pub(crate) type HashSet<K> = std::collections::HashSet<K>;
+
+static SYMBOLS: Lazy<Mutex<IndexSet<&'static str>>> = Lazy::new(Default::default);
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Symbol(NonZeroU32);
@@ -28,6 +31,14 @@ impl Symbol {
         let idx = NonZeroU32::new(idx as u32 + 1).unwrap();
         Symbol(idx)
     }
+}
+
+/// Shorthand for [Symbol::new]
+pub fn sym<T>(s: T) -> Symbol
+where
+    T: Borrow<str> + Into<Box<str>>,
+{
+    Symbol::new(s)
 }
 
 impl AsRef<str> for Symbol {

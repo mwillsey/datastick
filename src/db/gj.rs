@@ -16,7 +16,7 @@ impl Trie {
         debug_assert_eq!(shuffle.len(), tuple.len());
         let mut trie = self;
         for i in shuffle {
-            trie = trie.0.entry(tuple[*i].clone()).or_default();
+            trie = trie.0.entry(tuple[*i]).or_default();
         }
     }
 }
@@ -58,6 +58,10 @@ impl CompiledQuery {
         }
 
         Self { query, by_var }
+    }
+
+    pub(crate) fn get_index(&self, var: Symbol) -> usize {
+        self.by_var.get_index_of(&var).unwrap()
     }
 
     pub fn eval<F>(&self, db: &Database, mut f: F)
