@@ -47,11 +47,16 @@ impl Relation {
         }
     }
 
+    #[track_caller]
     pub fn insert_arrays<V, const N: usize>(&mut self, tuples: &[[V; N]])
     where
         V: Clone + Type,
     {
-        assert_eq!(self.arity, N);
+        assert_eq!(
+            self.arity, N,
+            "Tried to insert tuples of length {} into relation of arity {}.",
+            N, self.arity
+        );
         for tuple in tuples {
             let tuple = tuple.clone().map(|v| v.to_value());
             self.insert(&tuple);

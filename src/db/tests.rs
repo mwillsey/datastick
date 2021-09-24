@@ -68,3 +68,14 @@ fn triangle() {
     let q1 = db.add_query(query!(R(a, b), R(b, c), R(c, a)));
     db.eval_and_check(q1, &[a, b, c], &[[0, 1, 2], [1, 2, 0], [2, 0, 1]]);
 }
+
+#[test]
+fn same_var() {
+    crate::symbols!(R, a, b);
+    let mut db = Database::default();
+    db.add_relation(R, 3)
+        .insert_arrays(&[[1, 2, 3], [1, 2, 1], [1, 1, 2], [2, 1, 1]]);
+
+    let q1 = db.add_query(query!(R(a, a, b)));
+    db.eval_and_check(q1, &[a, b], &[[1, 1]]);
+}

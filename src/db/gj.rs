@@ -73,6 +73,15 @@ impl CompiledQuery {
             .atoms
             .iter()
             .map(|atom| {
+                let mut eq_constraints = vec![];
+                for (i, term) in atom.terms.iter().enumerate() {
+                    if let Term::Variable(_) = term {
+                        if let Some(j) = atom.terms.iter().position(|t| t == term) {
+                            eq_constraints.push((j, i));
+                        }
+                    }
+                }
+
                 let mut shuffle = vec![];
                 for var in self.by_var.keys() {
                     for (i, term) in atom.terms.iter().enumerate() {
@@ -86,7 +95,9 @@ impl CompiledQuery {
 
                 let mut trie = Trie::default();
                 for tuple in &db.relations[&atom.relation].set {
-                    trie.insert(&shuffle, tuple);
+                    if eq_constraints.iter().all(|(i, j)| tuple[*i] == tuple[*j]) {
+                        trie.insert(&shuffle, tuple);
+                    }
                 }
 
                 trie

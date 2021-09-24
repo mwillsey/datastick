@@ -19,7 +19,7 @@ static SYMBOLS: Lazy<Mutex<IndexSet<&'static str>>> = Lazy::new(Default::default
 #[macro_export]
 macro_rules! symbols {
     ($($id:ident),+) => {
-        #[allow(non_snake_case, unused_variables)]
+        #[allow(non_snake_case)]
         let ($($id),+) = ($(Symbol::new(stringify!($id))),+);
     };
 }
