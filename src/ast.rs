@@ -13,6 +13,15 @@ pub enum Term {
     Value(Value),
 }
 
+impl Term {
+    pub fn eval(&self) -> Value {
+        match self {
+            Term::Variable(v) => panic!("Can't eval a variable {}", v),
+            Term::Value(val) => *val,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Atom {
     pub relation: Symbol,
@@ -30,13 +39,6 @@ impl Atom {
     pub fn has_var(&self, v: Variable) -> bool {
         self.terms.contains(&Term::Variable(v))
     }
-}
-
-// TODO should allow some kind of expression in fact
-#[derive(Debug, Clone)]
-pub struct Fact {
-    pub symbol: Symbol,
-    pub args: Vec<Value>,
 }
 
 #[derive(Debug, Clone)]
@@ -102,6 +104,14 @@ macro_rules! schema {
             <$t as $crate::Type>::type_id()
         ),*])
     };
+}
+
+#[derive(Debug, Clone)]
+pub enum Statement {
+    Rule(Rule),
+    Relation(Relation),
+    Fact(Atom),
+    AssertEq(Symbol, Symbol),
 }
 
 // TODO rename

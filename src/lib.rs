@@ -6,6 +6,7 @@ use util::Symbol;
 
 pub mod ast;
 pub mod db;
+mod parse;
 pub mod util;
 
 #[derive(Default)]
@@ -20,9 +21,10 @@ impl DatalogContext {
         self.rules.push((rule, handle));
     }
 
-    pub fn add_fact(&mut self, fact: &Fact) {
-        let rel = &mut self.db.relations[&fact.symbol];
-        rel.insert(fact.args.as_slice())
+    pub fn add_fact(&mut self, fact: &Atom) {
+        let rel = &mut self.db.relations[&fact.relation];
+        let values: Vec<Value> = fact.terms.iter().map(Term::eval).collect();
+        rel.insert(&values)
     }
 
     pub fn add_relation(&mut self, relation: Relation) {
@@ -33,6 +35,27 @@ impl DatalogContext {
             .entry(symbol)
             .and_modify(|_| panic!("a relation was already here"))
             .or_insert(db::Relation::new(arity));
+    }
+
+    pub fn eval(&mut self, stmt: Statement) {
+        match stmt {
+            Statement::Rule(rule) => self.add_rule(rule),
+            Statement::Relation(rel) => self.add_relation(rel),
+            Statement::Fact(atom) => self.add_fact(&atom),
+            Statement::AssertEq(a, b) => {
+                let a = &self.db.relations[&a].set;
+                let b = &self.db.relations[&b].set;
+                assert_eq!(a, b)
+            }
+        }
+    }
+
+    pub fn parse_and_eval(&mut self, s: &str) {
+        let parser = parse::ProgramParser::new();
+        let stmts: Vec<_> = parser.parse(s).unwrap();
+        for stmt in stmts {
+            self.eval(stmt);
+        }
     }
 
     pub fn insert_many(&mut self, relation: Symbol, tuples: &[Value]) {

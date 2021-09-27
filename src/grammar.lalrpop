@@ -1,0 +1,58 @@
+use std::str::FromStr;
+use crate::{ast::*, util::Symbol};
+use std::any::TypeId;
+
+grammar;
+
+Comma<T>: Vec<T> = {
+    <mut v:(<T> ",")*> <e:T?> => match e {
+        None => v,
+        Some(e) => {
+            v.push(e);
+            v
+        }
+    }
+}
+
+pub Term: Term = {
+    Num => Term::Value(<>.to_value()),
+    Ident => Term::Variable(<>),
+    "(" <Term> ")" => <>,
+}
+
+Num: i32 = <r"[0-9]+"> => i32::from_str(<>).unwrap();
+
+pub Ident: Symbol = r"[_\p{Alphabetic}][_\w\d]*" => Symbol::new(<>);
+pub Atom: Atom = {
+    <relation:Ident> "(" <terms:Comma<Term>> ")" => Atom { <> }
+}
+
+pub Relation: Relation = {
+    <symbol:Ident> "(" <schema:Schema> ")" => Relation { <> }
+}
+
+pub Type: TypeId = {
+    "i32" => i32::type_id(),
+}
+
+Schema: Schema = {
+    Comma<(<Ident> ":" <Type>)> => Schema::from_named_types(<>)
+}
+
+pub Rule: Rule = {
+    <head:Comma<Atom>> ":-" <atoms:Comma<Atom>> => Rule {
+        head,
+        body: Query { atoms }
+    }
+}
+
+pub Statement: Statement = {
+    <Atom> "." => Statement::Fact(<>),
+    <Rule> "." => Statement::Rule(<>),
+    ".decl" <Relation> "." => Statement::Relation(<>),
+    ".assert" <Ident> "=" <Ident> => Statement::AssertEq(<>),
+}
+
+pub Program: Vec<Statement> = {
+    Statement* => <>,
+}
