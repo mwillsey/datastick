@@ -37,25 +37,34 @@ impl DatalogContext {
             .or_insert(db::Relation::new(arity));
     }
 
-    pub fn eval(&mut self, stmt: Statement) {
-        match stmt {
-            Statement::Rule(rule) => self.add_rule(rule),
-            Statement::Relation(rel) => self.add_relation(rel),
-            Statement::Fact(atom) => self.add_fact(&atom),
-            Statement::AssertEq(a, b) => {
-                let a = &self.db.relations[&a].set;
-                let b = &self.db.relations[&b].set;
-                assert_eq!(a, b)
+    pub fn eval(&mut self, prog: Program) {
+        for rel in prog.relations {
+            self.add_relation(rel);
+        }
+        for rule in prog.rules {
+            self.add_rule(rule);
+        }
+        for fact in prog.facts {
+            self.add_fact(&fact);
+        }
+
+        self.run();
+
+        for dir in prog.directives {
+            match dir {
+                Directive::AssertEq(a, b) => {
+                    let a = &self.db.relations[&a].set;
+                    let b = &self.db.relations[&b].set;
+                    assert_eq!(a, b)
+                }
             }
         }
     }
 
     pub fn parse_and_eval(&mut self, s: &str) {
         let parser = parse::ProgramParser::new();
-        let stmts: Vec<_> = parser.parse(s).unwrap();
-        for stmt in stmts {
-            self.eval(stmt);
-        }
+        let prog = parser.parse(s).unwrap();
+        self.eval(prog)
     }
 
     pub fn insert_many(&mut self, relation: Symbol, tuples: &[Value]) {

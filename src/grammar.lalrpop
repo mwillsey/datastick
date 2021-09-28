@@ -46,13 +46,14 @@ pub Rule: Rule = {
     }
 }
 
-pub Statement: Statement = {
-    <Atom> "." => Statement::Fact(<>),
-    <Rule> "." => Statement::Rule(<>),
-    ".decl" <Relation> "." => Statement::Relation(<>),
-    ".assert" <Ident> "=" <Ident> => Statement::AssertEq(<>),
+pub Directive: Directive = {
+    ".assert" <Ident> "=" <Ident> => Directive::AssertEq(<>),
 }
 
-pub Program: Vec<Statement> = {
-    Statement* => <>,
+pub Program: Program = {
+    () => Program::default(),
+    <a:Atom>             "." <mut prog:Program> => { prog.facts.push(a); prog },
+    <r:Rule>             "." <mut prog:Program> => { prog.rules.push(r); prog },
+    ".decl" <r:Relation> "." <mut prog:Program> => { prog.relations.push(r); prog },
+    <d:Directive>        "." <mut prog:Program> => { prog.directives.push(d); prog },
 }

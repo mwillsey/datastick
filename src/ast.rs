@@ -107,11 +107,16 @@ macro_rules! schema {
 }
 
 #[derive(Debug, Clone)]
-pub enum Statement {
-    Rule(Rule),
-    Relation(Relation),
-    Fact(Atom),
+pub enum Directive {
     AssertEq(Symbol, Symbol),
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct Program {
+    pub rules: Vec<Rule>,
+    pub relations: Vec<Relation>,
+    pub facts: Vec<Atom>,
+    pub directives: Vec<Directive>,
 }
 
 // TODO rename
